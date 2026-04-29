@@ -1,9 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from database import engine, Base
 from routers import auth
+import models
+
+load_dotenv()
 
 app = FastAPI()
+
+Base.metadata.create_all(bind=engine)
+
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # Browsers block requests between different origins (ports count as different origins) by default for security. CORS middleware tells your backend "yes, requests from localhost:5173 are allowed."

@@ -7,7 +7,6 @@ from database import get_db
 from models import User
 from auth import JWT_SECRET, hash_password, verify_password, create_token
 
-
 router = APIRouter()
 
 class LoginRequest(BaseModel):
