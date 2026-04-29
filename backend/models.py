@@ -41,9 +41,9 @@ class Appointment(Base):
     patient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False)
     availability_id = Column(Integer, ForeignKey("availabilities.id"), nullable=False)
+    status = Column(String, default="upcoming")
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
-    status = Column(String, default="upcoming")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class QueueEntry(Base):
