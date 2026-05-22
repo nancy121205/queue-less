@@ -48,3 +48,15 @@ def post_availability(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/
         end_time=data.end_time,
         max_patients=data.max_patients
     )
+
+@router.get("/{doctor_id}/availability")
+def get_availability(doctor_id: int, db: Session = Depends(get_db)):
+    doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    return {
+        "date": doctor.availability_date,
+        "start_time": doctor.availability_start_time,
+        "end_time": doctor.availability_end_time,
+        "max_patients": doctor.availability_max_patients
+    }
