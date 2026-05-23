@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
-from backend.auth import JWT_SECRET
-from models import Doctor, User
+from auth import JWT_SECRET
+from models import Doctor, User, Availability
 from database import get_db
 from sqlalchemy.orm import Session
 
@@ -32,7 +32,7 @@ def list_doctors(db: Session = Depends(get_db)):
     ]
 
 @router.post("/availability")
-def post_availability(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db), data: AvailabilityRequest = Depends()):
+def post_availability( data: AvailabilityRequest, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except JWTError:
@@ -40,23 +40,30 @@ def post_availability(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/
     user_id = payload.get("id")
     if payload.get("role") != "doctor":
         raise HTTPException(status_code=403, detail="Only doctors can set availability")
-    doctor_id = db.query(Doctor).filter(Doctor.user_id == user_id).first().id
+    
+    doctor = db.query(Doctor).filter(Doctor.user_id == user_id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor profile not found")
+    doctor_id = doctor.id
 
-    new_availability = AvailabilityRequest(
+    new_availability = Availability(
+        doctor_id=doctor_id,
         date=data.date,
         start_time=data.start_time,
         end_time=data.end_time,
         max_patients=data.max_patients
     )
+    db.add(new_availability)
+    db.commit()
+    db.refresh(new_availability)
+    return new_availability
 
 @router.get("/{doctor_id}/availability")
 def get_availability(doctor_id: int, db: Session = Depends(get_db)):
     doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
-    return {
-        "date": doctor.availability_date,
-        "start_time": doctor.availability_start_time,
-        "end_time": doctor.availability_end_time,
-        "max_patients": doctor.availability_max_patients
-    }
+    
+    slots = db.query(Availability).filter(Availability.doctor_id == doctor_id).all()
+
+    return slots
