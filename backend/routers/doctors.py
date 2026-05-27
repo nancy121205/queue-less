@@ -32,7 +32,7 @@ def list_doctors(db: Session = Depends(get_db)):
     ]
 
 @router.post("/availability")
-def post_availability( data: AvailabilityRequest, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
+def post_availability(data: AvailabilityRequest, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except JWTError:

@@ -22,6 +22,7 @@ class Doctor(Base):
     specialization = Column(String)
     avg_consult_mins = Column(Float)
     hospital_name = Column(String)
+    fees = Column(Integer, nullable=False, default=0)
 
 class Availability(Base):
     __tablename__ = "availabilities"
