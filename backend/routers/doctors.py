@@ -26,7 +26,8 @@ def list_doctors(db: Session = Depends(get_db)):
             "email": user.email,
             "specialization": doctor.specialization,
             "hospital_name": doctor.hospital_name,
-            "avg_consult_mins": doctor.avg_consult_mins
+            "avg_consult_mins": doctor.avg_consult_mins,
+            "fees": doctor.fees
         }
         for doctor, user in results
     ]
