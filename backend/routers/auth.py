@@ -21,9 +21,13 @@ class RegisterUserRequest(BaseModel):
 
 class RegisterDoctorRequest(BaseModel):
     name: str
-    role: str
     email: str
     password: str
+    role: str
+    specialization: str
+    avg_consult_mins: int
+    hospital_name: str
+    fees: float
 
 @router.post("/register/user")
 def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
@@ -43,7 +47,7 @@ def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
     return {"access_token": create_token({"id": str(new_user.id), "role": new_user.role})}
 
 @router.post("/register/doctor")
-def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
+def register(data: RegisterDoctorRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == data.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -61,7 +65,7 @@ def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
         specialization = data.specialization,
         avg_consult_mins = data.avg_consult_mins,
         hospital_name = data.hospital_name,
-        avg_consult_mins = data.specialization,
+        fees = data.fees,
     )
     db.add(new_doctor)
     db.commit()
