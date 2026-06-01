@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User
+from models import User, Doctor
 from auth import JWT_SECRET, hash_password, verify_password, create_token
 
 router = APIRouter()
@@ -13,14 +13,20 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-class RegisterRequest(BaseModel):
+class RegisterUserRequest(BaseModel):
     name: str
     role: str
     email: str
     password: str
 
-@router.post("/register")
-def register(data: RegisterRequest, db: Session = Depends(get_db)):
+class RegisterDoctorRequest(BaseModel):
+    name: str
+    role: str
+    email: str
+    password: str
+
+@router.post("/register/user")
+def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == data.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -33,7 +39,33 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
     return {"access_token": create_token({"id": str(new_user.id), "role": new_user.role})}
+
+@router.post("/register/doctor")
+def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    new_user = User(
+        name = data.name,
+        role = data.role,
+        email = data.email,
+        password_hash = hash_password(data.password)
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    new_doctor = Doctor(
+        user_id = new_user.id,
+        specialization = data.specialization,
+        avg_consult_mins = data.avg_consult_mins,
+        hospital_name = data.hospital_name,
+        avg_consult_mins = data.specialization,
+    )
+    db.add(new_doctor)
+    db.commit()
+    db.refresh(new_doctor)
 
 @router.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
