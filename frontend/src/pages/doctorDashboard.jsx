@@ -16,6 +16,13 @@ function DoctorDashboard() {
         try {
             const startDateTime = `${date}T${start_time}:00`;
             const endDateTime = `${date}T${end_time}:00`;
+
+            if(endDateTime <= startDateTime){
+                setError("End time must be after Start Time.");
+                setSuccess("");
+                return;
+            }
+            setError("")
             await axios.post("http://localhost:8000/doctors/availability", {
                     date, 
                     start_time : startDateTime, 
