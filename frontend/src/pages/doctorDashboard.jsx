@@ -4,9 +4,9 @@ import axios from "axios"
 
 function DoctorDashboard() {
     const [date, setDate] = useState("")
-    const [startTime, setStartTime] = useState("")
-    const [endTime, setEndTime] = useState("")
-    const [maxPatients, setMaxPatients] = useState("")
+    const [start_time, setStartTime] = useState("")
+    const [end_time, setEndTime] = useState("")
+    const [max_patients, setMaxPatients] = useState("")
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
     const navigate = useNavigate()
@@ -14,11 +14,13 @@ function DoctorDashboard() {
     async function handleSubmit(e) {
         e.preventDefault()
         try {
+            const startDateTime = `${date}T${start_time}:00`;
+            const endDateTime = `${date}T${end_time}:00`;
             await axios.post("http://localhost:8000/doctors/availability", {
-                date, 
-                start_time: startTime,
-                end_time: endTime,
-                max_patients: Number(maxPatients)
+                    date, 
+                    start_time : startDateTime, 
+                    end_time : endDateTime, 
+                    max_patients
                 },
                 {headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
             );
@@ -37,9 +39,9 @@ function DoctorDashboard() {
         <h1>Doctor Dashboard</h1>
         <form onSubmit={handleSubmit}>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
-            <input type="number" min="1" value={maxPatients} onChange={(e) => setMaxPatients(e.target.value)} required />
+            <input type="time" value={start_time} onChange={(e) => setStartTime(e.target.value)} required />
+            <input type="time" value={end_time} onChange={(e) => setEndTime(e.target.value)} required />
+            <input type="number" min="1" value={max_patients} onChange={(e) => setMaxPatients(Number(e.target.value))} required />
             <button type="submit">Add Availability</button>
         </form>
         {error && <p>{error}</p>}
