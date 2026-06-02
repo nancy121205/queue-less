@@ -13,7 +13,7 @@ class Appointment_schema(BaseModel):
     doctor_id : int
     availability_id : int
 
-@router.post("/appointments")
+@router.post("/")
 def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
