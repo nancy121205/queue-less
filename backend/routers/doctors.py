@@ -45,11 +45,10 @@ def post_availability(data: AvailabilityRequest, token: str = Depends(OAuth2Pass
     doctor = db.query(Doctor).filter(Doctor.user_id == user_id).first()
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor profile not found")
-    doctor_id = doctor.id
 
     new_availability = Availability(
-        doctor_id=doctor_id,
-        date=data.date,
+        doctor_id=doctor.id,
+        date=data.date, 
         start_time=data.start_time,
         end_time=data.end_time,
         max_patients=data.max_patients
