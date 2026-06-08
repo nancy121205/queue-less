@@ -21,7 +21,7 @@ def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2Password
         raise HTTPException(status_code=401, detail="Invalid token")
     
     if(payload.get("role")) != "patient":
-        raise HTTPException(status_code=403, detail="Only patients can set appointment")
+        raise HTTPException(status_code=403, detail="Only patients can book appointment")
     
     availability_id = data.availability_id
     doctor_id = data.doctor_id
@@ -104,3 +104,18 @@ def my_bookings(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"
         }
         for appointment, doctor, user in appointments
     ]
+
+@router.get('today')
+def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    if(payload.get("role")) != "doctor":
+        raise HTTPException(status_code=403, detail="Only doctors can see appointments scheduled")
+    
+    doctor_id = payload.get("id")
+    appointments = db.query(Appointment, Doctor).join(
+        Doctor, Appointment.doctor_id == Doctor.id
+    )
