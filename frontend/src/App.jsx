@@ -4,6 +4,7 @@ import Register from './pages/register';
 import Dashboard from './pages/dashboard';
 import DoctorDashboard from './pages/doctorDashboard';
 import PrivateRoute from './components/privateRoute';
+import DoctorProfile from './pages/doctorProfile';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/doctor-dashboard" element={
           <PrivateRoute><DoctorDashboard/></PrivateRoute>
         } />
+        <Route path="/doctor-profile/:id" element={<DoctorProfile/>}/>
       </Routes>
     </BrowserRouter>
   );

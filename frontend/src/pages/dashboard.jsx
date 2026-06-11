@@ -36,6 +36,9 @@ function Dashboard() {
                 {filteredDoctors.map(doctor => (
                     <div key={doctor.id}>
                         <h3>{doctor.name}</h3>
+                        <button onClick={() => navigate("/doctor-profile/" + doctor.id)}>
+                            Book Appointment
+                        </button>
                         <p>Specialization: {doctor.specialization}</p>
                         <p>Hospital: {doctor.hospital_name}</p>
                         <p>Avg Consult Time: {doctor.avg_consult_mins} mins</p>
