@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import date
 from database import get_db
 from jose import jwt, JWTError
 from auth import JWT_SECRET
@@ -105,7 +107,7 @@ def my_bookings(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"
         for appointment, doctor, user in appointments
     ]
 
-@router.get('today')
+@router.get('/today')
 def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
@@ -115,7 +117,22 @@ def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/lo
     if(payload.get("role")) != "doctor":
         raise HTTPException(status_code=403, detail="Only doctors can see appointments scheduled")
     
-    doctor_id = payload.get("id")
-    appointments = db.query(Appointment, Doctor).join(
-        Doctor, Appointment.doctor_id == Doctor.id
-    )
+    user_id = payload.get("id")
+    doctor_id = db.query(Doctor).filter(Doctor.user_id == user_id).first()
+    appointments = db.query(Appointment, User, QueueEntry).join(
+        User, User.id == Appointment.patient_id
+    ).join(
+        QueueEntry, QueueEntry.appointment_id == Appointment.id
+    ).filter(
+        Appointment.doctor_id == doctor_id,
+        func.date(Appointment.start_time) == date.today()
+    ).order_by(Appointment.start_time).all()
+
+    return [
+        {
+            "name" : user.name,
+            "start_time" : appointment.start_time,
+            "end_time" : appointment.end_time
+        }
+        for appointment, user in appointments
+    ]
