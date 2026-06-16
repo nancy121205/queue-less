@@ -3,11 +3,19 @@ import { useNavigate, useParams } from "react-router-dom"
 import axios from "axios"
 
 function DoctorProfile(){
+    // useParams() reads the id from the URL route /doctor-profile/:id, and you rename it to doctorId.
     const {id: doctorId} = useParams()
+    const [info, setInfo] = useState({})
     const [appointments, setAppointments] = useState([])
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
     const navigate = useNavigate()
+
+    useEffect(() => {
+        axios.get(`http://localhost:8000/doctors/${doctorId}`)
+            .then(res => setInfo(res.data))
+            .catch(() => setError("Failed to load Doctor's information"))
+    }, [doctorId])
 
     useEffect(() => {
         axios.get(`http://localhost:8000/doctors/${doctorId}/availability`)
@@ -21,8 +29,19 @@ function DoctorProfile(){
             {success && <p>{success}</p>}
 
             <div>
+                <h2>Doctor information:</h2>
+                <div>
+                    <p>Name: {info.name}</p>
+                    <p>Email: {info.email}</p>
+                    <p>Specialization: {info.specialization}</p>
+                    <p>Hospital: {info.hospital_name}</p>
+                    <p>Consult time: {info.avg_consult_mins} mins</p>
+                    <p>Fees: {info.name}</p>
+                </div>
+
+                <h2>Slots availabile:</h2>
                 {appointments.map((slot) => (
-                    <div key={slot.id}>
+                    <div>
                         <p>Date: {new Date(slot.date).toLocaleDateString()}</p>
                         <p>Start: {new Date(slot.start_time).toLocaleTimeString()}</p>
                         <p>End: {new Date(slot.end_time).toLocaleTimeString()}</p>
