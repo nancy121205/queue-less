@@ -32,6 +32,24 @@ def list_doctors(db: Session = Depends(get_db)):
         for doctor, user in results
     ]
 
+@router.get("/{doctor_id}")
+def doctor_info(doctor_id: int, db: Session = Depends(get_db)):
+    result = db.query(Doctor, User).join(User, Doctor.user_id == User.id).filter(Doctor.id == doctor_id).first()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    doctor, user = result
+    return {
+        "id": doctor.id,
+        "name": user.name,
+        "email": user.email,
+        "specialization": doctor.specialization,
+        "hospital_name": doctor.hospital_name,
+        "avg_consult_mins": doctor.avg_consult_mins,
+        "fees": doctor.fees
+    }
+
 @router.post("/availability")
 def post_availability(data: AvailabilityRequest, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
