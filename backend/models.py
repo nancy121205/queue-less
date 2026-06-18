@@ -55,7 +55,7 @@ class QueueEntry(Base):
     position = Column(Integer)
     estimated_wait = Column(Float)
     joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    status = Column(String, default="waiting")  # waiting / called / done
+    status = Column(String, default="waiting")  # waiting / called / seen
 
 class Report(Base):
     __tablename__ = "reports"
