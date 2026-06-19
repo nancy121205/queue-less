@@ -27,7 +27,7 @@ function DoctorProfile(){
         try{
             setError("")
             setSuccess("")
-            const response = await axios.post("http://localhost:8000/appointments", 
+            const response = await axios.post("http://localhost:8000/appointments/new", 
                 {doctor_id: doctorId, availability_id : availability_id},
                 {headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
             );

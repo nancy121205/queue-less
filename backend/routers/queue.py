@@ -52,39 +52,3 @@ def doctor_queue(availability_id: int, token: str=Depends(OAuth2PasswordBearer(t
         }
         for queueentry, user, appointment in queue
     ]
-
-@router.get("/")
-def patient_queue(token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session=Depends(get_db)):
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-    except:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    if payload.get("role") != "patient":
-        raise HTTPException(status_code=403, detail="Only User can view bookings made")
-    
-    user_id = payload.get('id')
-        
-    # date, appointment_start_time, doctor, hospital, queue_position, estimated_wait, status
-    queue = db.query(Doctor, QueueEntry, Appointment, User).join(
-        QueueEntry, QueueEntry.appointment_id == Appointment.id
-    ).join(
-        Doctor, Doctor.id == Appointment.doctor_id
-    ).join(
-        User, User.id == Doctor.user_id
-    ).filter(
-        Appointment.patient_id == user_id
-    ).order_by(Appointment.start_time).all()
-
-    return [
-        {   
-            "date" : appointment.start_time.date(),
-            "appointment_start_time" : appointment.start_time,
-            "doctor" : user.name,
-            "hospital" : doctor.hospital_name,
-            "queue_position" : queueentry.position,
-            "estimated_wait" : queueentry.estimated_wait,
-            "status" : queueentry.status
-        }
-        for doctor, queueentry, appointment, user in queue
-    ]
