@@ -73,40 +73,6 @@ def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2Password
         "message": f"Booked successfully. You are #{position} in queue."
     }
 
-@router.get('/my')
-def my_bookings(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    if(payload.get("role")) != "patient":
-        raise HTTPException(status_code=403, detail="Only patients can see appointments made")
-    
-    user_id = payload.get("id")
-    appointments = db.query(Appointment, Doctor, User).join(
-        Doctor, Appointment.doctor_id == Doctor.id
-    ).join(
-        User, Doctor.user_id == User.id
-    ).filter(
-        Appointment.patient_id == user_id
-    ).order_by(Appointment.created_at.desc()).all()
-
-    return [
-        {
-            "appointment_id": appointment.id,
-            "date": appointment.start_time.date(),
-            "doctor_name": user.name,
-            "specialization": doctor.specialization,
-            "hospital": doctor.hospital_name,
-            "start_time": appointment.start_time,
-            "end_time": appointment.end_time,
-            "status": appointment.status,
-            "created_at": appointment.created_at
-        }
-        for appointment, doctor, user in appointments
-    ]
-
 @router.get('/today')
 def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
@@ -118,7 +84,7 @@ def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/lo
         raise HTTPException(status_code=403, detail="Only doctors can see appointments scheduled")
     
     user_id = payload.get("id")
-    doctor_id = db.query(Doctor).filter(Doctor.user_id == user_id).first()
+    doctor_id = db.query(Doctor).filter(Doctor.user_id == user_id).first().id
     appointments = db.query(Appointment, User, QueueEntry).join(
         User, User.id == Appointment.patient_id
     ).join(
