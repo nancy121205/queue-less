@@ -5,6 +5,7 @@ from database import get_db
 from jose import jwt
 from auth import JWT_SECRET
 from models import Doctor, QueueEntry, User, Appointment, Availability
+from typing import Literal
 
 router = APIRouter()
 
@@ -52,3 +53,41 @@ def doctor_queue(availability_id: int, token: str=Depends(OAuth2PasswordBearer(t
         }
         for queueentry, user, appointment in queue
     ]
+
+@router.patch("/{entry_id}/status")
+def update_status(entry_id: int, new_status : Literal["waiting", "called", "seen"], token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session=Depends(get_db)):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    doctor_id = payload.get("id")
+    if payload.get("role") != "doctor":
+        raise HTTPException(status_code=403, detail="Only doctors can view appointments made")
+    
+    queue = db.query(QueueEntry).filter(QueueEntry.id == entry_id).first()
+
+    if not queue:
+        raise HTTPException(status_code=404, detail="Invalid status")
+    
+    queue.status = new_status
+    
+    if new_status == "seen":
+
+        appointment = db.query(Appointment).filter(Appointment.id == queue.appointment_id).first()
+        appointment.status = "completed"
+
+        db.query(QueueEntry).filter(
+            QueueEntry.position > queue.position,
+            QueueEntry.appointment_id.in_(
+                db.query(Appointment.id).filter(
+                    Appointment.doctor_id == doctor_id
+                )
+            )
+        ).update(
+            {
+                "position": QueueEntry.position - 1
+            }, 
+            synchronize_session=False
+        )
+    db.commit()
