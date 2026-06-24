@@ -73,7 +73,7 @@ def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2Password
         "message": f"Booked successfully. You are #{position} in queue."
     }
 
-@router.get("/today")
+@router.get("/upcoming")
 def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
@@ -85,22 +85,20 @@ def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/lo
     
     user_id = payload.get("id")
     doctor_id = db.query(Doctor).filter(Doctor.user_id == user_id).first().id
-    appointments = db.query(Appointment, User, QueueEntry).join(
-        User, User.id == Appointment.patient_id
-    ).join(
-        QueueEntry, QueueEntry.appointment_id == Appointment.id
-    ).filter(
-        Appointment.doctor_id == doctor_id,
-        func.date(Appointment.start_time) == date.today()
-    ).order_by(Appointment.start_time).all()
+    availabilities = db.query(Availability).filter(
+        Availability.doctor_id == doctor_id,
+        func.date(Availability.start_time) >= date.today()
+    ).order_by(Availability.start_time).all()
 
     return [
         {
-            "name" : user.name,
-            "start_time" : appointment.start_time,
-            "end_time" : appointment.end_time
+            "id" : availability.id,
+            "start_time" : availability.start_time,
+            "end_time" : availability.end_time,
+            "booked_patients" : availability.booked_patients,
+            "max_patients" : availability.max_patients
         }
-        for appointment, user in appointments
+        for availability in availabilities
     ]
 
 
@@ -135,7 +133,7 @@ def my_bookings(token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))
             "hospital" : doctor.hospital_name,
             "queue_position" : queueentry.position,
             "estimated_wait" : queueentry.estimated_wait,
-            "status" : queueentry.status
+            "status" : appointment.status
         }
         for doctor, queueentry, appointment, user in queue
     ]
