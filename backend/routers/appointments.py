@@ -127,8 +127,9 @@ def my_bookings(token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))
 
     return [
         {   
+            "id" : appointment.id,
             "date" : appointment.start_time.date(),
-            "appointment_start_time" : appointment.start_time,
+            "appointment_start_time" : appointment.start_time.time(),
             "doctor" : user.name,
             "hospital" : doctor.hospital_name,
             "queue_position" : queueentry.position,

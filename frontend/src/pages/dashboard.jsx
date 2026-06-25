@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom"
 import axios from "axios"
 
 function Dashboard() {
-    const [patient, setPatient] = useState(null)
     const [doctors, setDoctors] = useState([])
     const [search, setSearch] = useState("")
     const [error, setError] = useState("")
@@ -14,8 +13,12 @@ function Dashboard() {
     )
 
     useEffect(() => {
+        setError("")
         axios.get("http://localhost:8000/doctors/")
-            .then(res => setDoctors(res.data))
+            .then(res => {
+                setDoctors(res.data)
+                setError("")
+            })
             .catch(() => setError("Failed to load doctors"))
     }, [])
     return (
@@ -23,8 +26,11 @@ function Dashboard() {
             <h1>Patient Dashboard</h1>
             <p>Welcome, patient!</p>
             
-            {error && <p>{error}</p>}
-
+            <button onClick={() => navigate("/appointments/")}>
+                View Appointments
+            </button>
+            
+            <h2>Book new Appointment</h2>
             <input
                 type="text"
                 placeholder="Search specialization..."
@@ -33,6 +39,7 @@ function Dashboard() {
             />
 
             <div>
+                {error && <p>{error}</p>}
                 {filteredDoctors.map(doctor => (
                     <div key={doctor.id}>
                         <h3>{doctor.name}</h3>
