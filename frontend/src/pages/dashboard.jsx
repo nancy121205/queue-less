@@ -19,7 +19,7 @@ function Dashboard() {
                 setDoctors(res.data)
                 setError("")
             })
-            .catch(() => setError("Failed to load doctors"))
+            .catch((err) => setError(err.response?.data?.detail || "Failed to load doctors"))
     }, [])
     return (
         <div>
