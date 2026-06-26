@@ -139,3 +139,15 @@ def my_bookings(token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))
         }
         for doctor, queueentry, appointment, user in queue
     ]
+
+@router.post("/new")
+def cancel_appointment(appointment_id: int, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    if(payload.get("role")) != "patient":
+        raise HTTPException(status_code=403, detail="Only patients can cancel appointment")
+    
+    user_id = payload.get("id")
