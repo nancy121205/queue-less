@@ -9,7 +9,7 @@ from typing import Literal
 
 router = APIRouter()
 
-@router.get("/today")
+@router.get("/{availability_id}")
 def doctor_queue(availability_id: int, token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session=Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
@@ -40,10 +40,11 @@ def doctor_queue(availability_id: int, token: str=Depends(OAuth2PasswordBearer(t
         User, User.id == Appointment.patient_id
     ).filter(
         Appointment.availability_id == availability_id
-    ).order_by(Appointment.start_time).all()
+    ).order_by(QueueEntry.position).all()
 
     return [
         {   
+            "entry_id" : queueentry.id,
             "position" : queueentry.position,
             "patient_id" : user.id,
             "patient_name" : user.name,
@@ -61,14 +62,16 @@ def update_status(entry_id: int, new_status : Literal["waiting", "called", "seen
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
     
-    doctor_id = payload.get("id")
+    user_id = payload.get("id")
+    doctor_id = db.query(Doctor).filter(Doctor.user_id == user_id).first().id
+    
     if payload.get("role") != "doctor":
         raise HTTPException(status_code=403, detail="Only doctors can view appointments made")
     
     queue = db.query(QueueEntry).filter(QueueEntry.id == entry_id).first()
 
     if not queue:
-        raise HTTPException(status_code=404, detail="Invalid status")
+        raise HTTPException(status_code=404, detail="Queue entry not found")
     
     queue.status = new_status
     
@@ -91,3 +94,4 @@ def update_status(entry_id: int, new_status : Literal["waiting", "called", "seen
             synchronize_session=False
         )
     db.commit()
+    return {"message": f"Queue entry updated updated to {new_status}"}

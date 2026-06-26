@@ -93,6 +93,7 @@ def my_appointments(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/lo
     return [
         {
             "id" : availability.id,
+            "date": availability.start_time.date(),
             "start_time" : availability.start_time,
             "end_time" : availability.end_time,
             "booked_patients" : availability.booked_patients,

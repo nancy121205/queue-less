@@ -6,6 +6,7 @@ import DoctorDashboard from './pages/doctorDashboard';
 import PrivateRoute from './components/privateRoute';
 import DoctorProfile from './pages/doctorProfile';
 import Appointments from './pages/appointments';
+import QueueStatus from './pages/queueStatus';
 
 function App() {
   return (
@@ -22,7 +23,9 @@ function App() {
         } />
         <Route path="/doctor-profile/:id" element={<DoctorProfile/>}/>
         <Route path="/appointments/" element={<Appointments/>}/>
-        
+        <Route path="/queue-status/:id" element={
+          <PrivateRoute><QueueStatus/></PrivateRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );
