@@ -4,10 +4,18 @@ from dotenv import load_dotenv
 from database import engine, Base
 from routers import auth, doctors, appointments, queue
 import models
+from contextlib import asynccontextmanager
+import joblib
 
 load_dotenv()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.model = joblib.load("../ml/models/wait_time_model.pkl")
+    print("Model and encoder loaded successfully")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 Base.metadata.create_all(bind=engine)
 

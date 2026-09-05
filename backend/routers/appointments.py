@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -8,6 +8,7 @@ from database import get_db
 from jose import jwt, JWTError
 from auth import JWT_SECRET
 from models import Availability, Appointment, QueueEntry, Doctor, User
+from ml_utils.predictor import build_features
 
 router = APIRouter()
 
@@ -16,7 +17,7 @@ class Appointment_schema(BaseModel):
     availability_id : int
 
 @router.post("/new")
-def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
+def get_appointment(data:Appointment_schema, request = Request, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except JWTError:
@@ -41,7 +42,11 @@ def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2Password
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="You already booked this slot")
-    
+
+    doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
     new_appointment = Appointment(
         patient_id= payload.get("id"), 
         doctor_id= doctor_id,
@@ -64,6 +69,16 @@ def get_appointment(data:Appointment_schema, token: str = Depends(OAuth2Password
         position = position
     )
     db.add(new_queue_entry)
+
+    model = request.app.state.model
+    try:
+        features = build_features(position, doctor.avg_consult_mins, availability.start_time)
+        predicted_wait = float(model.predict(features)[0])
+    except Exception:
+        predicted_wait = position * float(doctor.avg_consult_mins)
+
+    new_queue_entry.estimated_wait = round(predicted_wait, 1)
+
     db.commit()
     
     return {
@@ -140,7 +155,7 @@ def my_bookings(token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))
         for doctor, queueentry, appointment, user in queue
     ]
 
-@router.post("/new")
+@router.post("/cancel")
 def cancel_appointment(appointment_id: int, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
@@ -151,3 +166,5 @@ def cancel_appointment(appointment_id: int, token: str = Depends(OAuth2PasswordB
         raise HTTPException(status_code=403, detail="Only patients can cancel appointment")
     
     user_id = payload.get("id")
+
+    pass
