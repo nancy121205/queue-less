@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from jose import jwt, JWTError
 from auth import JWT_SECRET
 from models import Availability, Appointment, QueueEntry, Doctor, User
 from ml_utils.predictor import build_features
+from notifications.mailer import send_email
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ class Appointment_schema(BaseModel):
     availability_id : int
 
 @router.post("/new")
-def get_appointment(data:Appointment_schema, request = Request, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
+def get_appointment(data:Appointment_schema, request : Request, background_tasks : BackgroundTasks, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except JWTError:
@@ -80,6 +81,14 @@ def get_appointment(data:Appointment_schema, request = Request, token: str = Dep
     new_queue_entry.estimated_wait = round(predicted_wait, 1)
 
     db.commit()
+
+    patient = db.query(User).filter(User.id == payload.get("id")).first()
+    background_tasks.add_task(
+        send_email,
+        to=patient.email,
+        subject="Appointment Confirmed — QueueLess",
+        body=f"<p>Hi {patient.name}, your appointment with Dr. {doctor.name} is booked. You're #{position} in queue, estimated wait: {new_queue_entry.estimated_wait} minutes.</p>"
+    )
     
     return {
         "appointment_id": new_appointment.id,
