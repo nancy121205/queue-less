@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db
@@ -6,10 +6,10 @@ from jose import jwt
 from auth import JWT_SECRET
 from models import Doctor, QueueEntry, User, Appointment, Availability
 from typing import Literal
-from fastapi import Request
 from ml_utils.predictor import build_features
 from pydantic import BaseModel
 from datetime import datetime
+from notifications.mailer import send_email
 
 router = APIRouter()
 
@@ -65,7 +65,13 @@ def doctor_queue(availability_id: int, token: str=Depends(OAuth2PasswordBearer(t
     ]
 
 @router.patch("/{entry_id}/status")
-def update_status(entry_id: int, new_status : Literal["waiting", "called", "seen"], token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session=Depends(get_db)):
+def update_status(
+    entry_id: int, 
+    new_status : Literal["waiting", "called", "seen"], 
+    background_tasks: BackgroundTasks,
+    token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), 
+    db: Session=Depends(get_db)
+):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except:
@@ -102,6 +108,36 @@ def update_status(entry_id: int, new_status : Literal["waiting", "called", "seen
             }, 
             synchronize_session=False
         )
+
+        affected_entries = db.query(QueueEntry).filter(
+            QueueEntry.position.in_([1, 2]),
+            QueueEntry.appointment_id.in_(
+                db.query(Appointment.id).filter(Appointment.doctor_id == doctor_id)
+            )
+        ).all()
+
+        for entry in affected_entries:
+            entry_appointment = db.query(Appointment).filter(Appointment.id == entry.appointment_id).first()
+            patient = db.query(User).filter(User.id == entry_appointment.patient_id).first()
+
+            if entry.position == 2 and not entry.next_email_sent:
+                background_tasks.add_task(
+                    send_email,
+                    to=patient.email,
+                    subject="You're next — QueueLess",
+                    body=f"<p>Hi {patient.name}, you're next in line! Please be ready.</p>"
+                )
+                entry.next_email_sent = True
+
+            if entry.position == 1 and not entry.ready_email_sent:
+                background_tasks.add_task(
+                    send_email,
+                    to=patient.email,
+                    subject="Doctor is ready for you — QueueLess",
+                    body=f"<p>Hi {patient.name}, the doctor is ready to see you now.</p>"
+                )
+                entry.ready_email_sent = True
+
     db.commit()
     return {"message": f"Queue entry updated updated to {new_status}"}
 
