@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime, timezone
@@ -56,6 +56,8 @@ class QueueEntry(Base):
     estimated_wait = Column(Float)
     joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     status = Column(String, default="waiting")  # waiting / called / seen
+    next_email_sent = Column(Boolean, default=False)
+    ready_email_sent = Column(Boolean, default=False)
 
 class Report(Base):
     __tablename__ = "reports"
