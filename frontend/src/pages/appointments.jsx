@@ -27,9 +27,25 @@ function Appointments(){
 
         return () => clearInterval(interval)
     }, [])
+
+    const formatEstimatedTime = (isoString) => {
+        if (!isoString) return "Not available"
+        const date = new Date(isoString)
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }
+
+    const formatSlotTime = (timeString) => {
+        if (!timeString) return "Not available"
+        const [hours, minutes] = timeString.split(":")
+        const date = new Date()
+        date.setHours(parseInt(hours), parseInt(minutes), 0)
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }
+
     return(
         <div>   
             <h2>Appointments made</h2>
+            {error && <p>{error}</p>}
             <div>
                 {appointments.map(appointment => (
                     <div key={appointment.id}>
@@ -37,10 +53,13 @@ function Appointments(){
                         <p>Date: {appointment.date}</p>
                         <p>Doctor: {appointment.doctor}</p>
                         <p>Hospital: {appointment.hospital}</p>
-                        <p>Start Time: {appointment.appointment_start_time}</p>
+                        <p>Slot Time: {formatSlotTime(appointment.appointment_start_time)}</p>
                         <p>Queue Position: {appointment.queue_position}</p>
                         <p>Status: {appointment.status}</p>
-                        <p>Estimated wait: {appointment.estimated_wait}</p>
+                        <p>Estimated Wait: {appointment.estimated_wait} mins</p>
+                        {appointment.status !== "completed" && (
+                            <p>Expected Start: {formatEstimatedTime(appointment.estimated_start_time)}</p>
+                        )}
                     </div>
                 ))}
             </div>

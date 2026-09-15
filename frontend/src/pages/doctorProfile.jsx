@@ -31,7 +31,7 @@ function DoctorProfile(){
                 {doctor_id: doctorId, availability_id : availability_id},
                 {headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
             );
-            setSuccess(response.data.message + ` Start time: ${response.data.start_time}`)
+            setSuccess(response.data.message + ` Start time: ${response.data.estimated_start_time}`)
             setError("")
         }
         catch(err){

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import date
+from datetime import date, timedelta
 from database import get_db
 from jose import jwt, JWTError
 from auth import JWT_SECRET
@@ -83,17 +83,23 @@ def get_appointment(data:Appointment_schema, request : Request, background_tasks
     db.commit()
 
     patient = db.query(User).filter(User.id == payload.get("id")).first()
+    doc = db.query(User).filter(User.id == doctor.user_id).first()
+    estimated_start_time = availability.start_time + timedelta(minutes=new_queue_entry.estimated_wait)
+
     background_tasks.add_task(
         send_email,
         to=patient.email,
         subject="Appointment Confirmed — QueueLess",
-        body=f"<p>Hi {patient.name}, your appointment with Dr. {doctor.name} is booked. You're #{position} in queue, estimated wait: {new_queue_entry.estimated_wait} minutes.</p>"
+        body=f"<p>Hi {patient.name}, your appointment with Dr. {doc.name}  is booked. "
+        f"You're #{position} in queue, Your appointment will start around "
+        f"{estimated_start_time.strftime('%I:%M %p')} on {estimated_start_time.strftime('%B %d')}</p>"
     )
     
     return {
         "appointment_id": new_appointment.id,
         "position": position,
         "start_time": new_appointment.start_time,
+        "estimated_start_time": estimated_start_time,
         "message": f"Booked successfully. You are #{position} in queue."
     }
 
@@ -150,19 +156,25 @@ def my_bookings(token: str=Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))
         Appointment.patient_id == user_id
     ).order_by(Appointment.start_time).all()
 
-    return [
-        {   
-            "id" : appointment.id,
-            "date" : appointment.start_time.date(),
-            "appointment_start_time" : appointment.start_time.time(),
-            "doctor" : user.name,
-            "hospital" : doctor.hospital_name,
-            "queue_position" : queueentry.position,
-            "estimated_wait" : queueentry.estimated_wait,
-            "status" : appointment.status
-        }
-        for doctor, queueentry, appointment, user in queue
-    ]
+    result = []
+    for doctor, queueentry, appointment, user in queue:
+        estimated_start_time = None
+        if queueentry.estimated_wait is not None:
+            estimated_start_time = appointment.start_time + timedelta(minutes=queueentry.estimated_wait)
+
+        result.append({
+            "id": appointment.id,
+            "date": appointment.start_time.date(),
+            "appointment_start_time": appointment.start_time.time(),
+            "estimated_start_time": estimated_start_time,
+            "doctor": user.name,
+            "hospital": doctor.hospital_name,
+            "queue_position": queueentry.position,
+            "estimated_wait": queueentry.estimated_wait,
+            "status": appointment.status
+        })
+
+    return result
 
 @router.post("/cancel")
 def cancel_appointment(appointment_id: int, token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
