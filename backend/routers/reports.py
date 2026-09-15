@@ -12,8 +12,9 @@ from database import get_db
 from models import Report          
 from auth import JWT_SECRET
 from jose import jwt
+from llm_utils.summarizer import generate_summary
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter()
 
 
 def clean_text(raw: str) -> str:
@@ -33,11 +34,7 @@ def extract_text_from_pdf(contents: bytes) -> str:
 
 
 @router.post("/upload")
-async def upload_report(
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))
-):
+async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_db), token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except Exception:
@@ -69,3 +66,21 @@ async def upload_report(
     db.refresh(new_report)
 
     return {"report_id": new_report.id, "raw_text_preview": cleaned[:200]}
+
+@router.post("/{report_id}/summarize")
+def summarize_report(report_id: int, db: Session = Depends(get_db), token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    summary = generate_summary(report.raw_text)
+    report.ai_summary = summary
+    db.commit()
+    db.refresh(report)
+
+    return summary
