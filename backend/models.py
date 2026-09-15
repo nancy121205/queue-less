@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime, timezone
@@ -67,5 +67,5 @@ class Report(Base):
     appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=False)
     file_url = Column(String)
     raw_text = Column(String)
-    ai_summary = Column(String)
+    ai_summary = Column(JSON)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
