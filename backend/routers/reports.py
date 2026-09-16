@@ -34,7 +34,7 @@ def extract_text_from_pdf(contents: bytes) -> str:
 
 
 @router.post("/upload")
-async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_db), token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))):
+async def upload_report(appointment_id: int | None = None, file: UploadFile = File(...), db: Session = Depends(get_db), token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except Exception:
@@ -46,8 +46,11 @@ async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_
     if file.content_type == "application/pdf":
         extracted_text = extract_text_from_pdf(contents)
     else:
-        image = Image.open(io.BytesIO(contents))
-        extracted_text = pytesseract.image_to_string(image)
+        try:
+            image = Image.open(io.BytesIO(contents))
+            extracted_text = pytesseract.image_to_string(image)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Could not process the uploaded image")
 
     cleaned = clean_text(extracted_text)
 
@@ -58,6 +61,7 @@ async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_
 
     new_report = Report(
         patient_id=patient_id,
+        appointment_id=appointment_id,
         file_url=file_path,
         raw_text=cleaned,
     )
@@ -65,7 +69,7 @@ async def upload_report(file: UploadFile = File(...), db: Session = Depends(get_
     db.commit()
     db.refresh(new_report)
 
-    return {"report_id": new_report.id, "raw_text_preview": cleaned[:200]}
+    return {"report_id": new_report.id, "raw_text_preview": cleaned}
 
 @router.post("/{report_id}/summarize")
 def summarize_report(report_id: int, db: Session = Depends(get_db), token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login"))):

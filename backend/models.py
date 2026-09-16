@@ -64,7 +64,7 @@ class Report(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=False)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=True)
     file_url = Column(String)
     raw_text = Column(String)
     ai_summary = Column(JSON)

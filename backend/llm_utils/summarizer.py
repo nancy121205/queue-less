@@ -33,7 +33,7 @@ Respond with ONLY valid JSON, no markdown formatting, no code fences, no extra c
   ],
   "diagnoses": ["only diagnoses explicitly stated in the text — never infer a diagnosis yourself from lab values"],
   "medications": ["medication name, dosage, and frequency together, e.g. 'Paracetamol 500mg — 1-0-1 for 5 days'. If frequency is legible but the drug name is not, write 'illegible medication name' rather than guessing"],
-  "summary": "a 3-line plain-English summary a patient can understand, adapted to the document type — for a lab report, the overall picture; for a prescription, what to take and why; for a discharge summary, what happened and what to do next"
+  "summary": "a 4-line plain-English summary a patient can understand, adapted to the document type — for a lab report, the overall picture; for a prescription, what to take and why; for a discharge summary, what happened and what to do next"
 }
 
 Rules:
@@ -42,6 +42,7 @@ Rules:
 - Never invent a diagnosis, value, or medication not explicitly present in the text.
 - Do not add your own clinical interpretation beyond what is written — you are summarizing and structuring, not diagnosing.
 - abnormal_values must ONLY include values explicitly flagged abnormal (marked H/L/*, or clearly outside a stated reference range). Do not guess something is abnormal without a stated range or explicit flag. If nothing is flagged, return an empty list.
+- do not include morphology descriptions or lab-technician observations in diagnoses — that field is only for a doctor's stated clinical diagnosis
 """
 
 
@@ -65,7 +66,7 @@ def generate_summary(raw_text: str) -> dict:
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.6-flash",
             contents=f"{SYSTEM_PROMPT}\n\nReport text:\n{raw_text}"
         )
         raw_response = response.text.strip()
