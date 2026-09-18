@@ -1,8 +1,22 @@
 from google import genai
+from google.genai import errors as genai_errors
 import os
 import json
+import logging
+import time
+
+logging.getLogger("google_genai.models").setLevel(logging.ERROR)
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+MODEL_FALLBACK_CHAIN = [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+]
 
 SYSTEM_PROMPT = """You are a medical assistant helping a doctor quickly review a patient's uploaded report before an appointment. The text you receive comes from OCR run on a scanned or photographed document, so it may contain:
 - Misread characters (e.g. "1" read as "l", "0" as "O")
@@ -64,27 +78,42 @@ def generate_summary(raw_text: str) -> dict:
     if not raw_text or len(raw_text.strip()) < 20:
         return _empty_summary("Not enough text extracted from this report to generate a summary.")
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=f"{SYSTEM_PROMPT}\n\nReport text:\n{raw_text}"
-        )
-        raw_response = response.text.strip()
+    last_error = None
 
-        # Gemini sometimes wraps JSON in ```json fences despite instructions — strip if present
-        if raw_response.startswith("```"):
-            raw_response = raw_response.strip("`").replace("json", "", 1).strip()
+    for model_name in MODEL_FALLBACK_CHAIN:
+        try:
+            response = client.models.generate_content(model=model_name, contents=f"{SYSTEM_PROMPT}\n\nReport text:\n{raw_text}")
+            raw_response = response.text.strip()
 
-        parsed = json.loads(raw_response)
+            if raw_response.startswith("```"):
+                raw_response = raw_response.strip("`").replace("json", "", 1).strip()
 
-        # Defensive fill — if Gemini omits a key despite instructions, don't let it crash the frontend on a missing field later
-        for key in ["document_type", "patient_name", "key_findings", "abnormal_values", "diagnoses", "medications", "summary"]:
-            if key not in parsed:
-                parsed[key] = [] if key in ["key_findings", "abnormal_values", "diagnoses", "medications"] else None
+            parsed = json.loads(raw_response)
 
-        return parsed
+            for key in ["document_type", "patient_name", "key_findings", "abnormal_values", "diagnoses", "medications", "summary"]:
+                if key not in parsed:
+                    parsed[key] = [] if key in ["key_findings", "abnormal_values", "diagnoses", "medications"] else None
 
-    except json.JSONDecodeError:
-        return _empty_summary("Summary generation failed — could not parse AI response.")
-    except Exception as e:
-        return _empty_summary(f"Summary generation failed: {str(e)}")
+            parsed["_model_used"] = model_name  
+            return parsed
+
+        except genai_errors.APIError as e:
+            last_error = e
+
+            print(f"ERROR: {model_name} | type={type(e).__name__} | code={e.code} | message={e.message}")
+
+            if e.code in (404, 429, 500, 502, 503, 504):
+                print(f"FALLBACK: trying next model...")
+                continue
+
+            return _empty_summary(
+                f"Summary generation failed {model_name}: {str(e)}"
+            )
+
+        except json.JSONDecodeError:
+            return _empty_summary(f"Summary generation failed {model_name} — could not parse AI response.")
+
+        except Exception as e:
+            return _empty_summary(f"Summary generation failed {model_name}: {str(e)}")
+
+    return _empty_summary(f"All models exhausted their rate limits. Last error: {str(last_error)}")
