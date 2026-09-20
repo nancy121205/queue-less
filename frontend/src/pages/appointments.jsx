@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
+import AppShell from "../components/ui/AppShell"
+import Badge from "../components/ui/Badge"
+import Card from "../components/ui/Card"
+import { alertErrorClass } from "../components/ui/formStyles"
 
 function Appointments(){
     const [appointments, setAppointments] = useState([])
     const [error, setError] = useState("")
+    const navigate = useNavigate()
 
     useEffect(() => {
         const fetchAppointments = () => {
@@ -43,27 +48,30 @@ function Appointments(){
     }
 
     return(
-        <div>   
-            <h2>Appointments made</h2>
-            {error && <p>{error}</p>}
-            <div>
+        <AppShell
+            title="Appointments"
+            description="Your booked visits, queue position, and estimated wait."
+        >
+            {error && <p className={`mb-4 ${alertErrorClass}`}>{error}</p>}
+            <div className="grid gap-4 md:grid-cols-2">
                 {appointments.map(appointment => (
-                    <div key={appointment.id}>
-                        <h4>Appointment</h4>
+                    <Card key={appointment.id} title="Appointment">
+                        <div className="space-y-1 text-sm text-slate-700">
                         <p>Date: {appointment.date}</p>
                         <p>Doctor: {appointment.doctor}</p>
                         <p>Hospital: {appointment.hospital}</p>
                         <p>Slot Time: {formatSlotTime(appointment.appointment_start_time)}</p>
                         <p>Queue Position: {appointment.queue_position}</p>
-                        <p>Status: {appointment.status}</p>
+                        <p className="flex items-center gap-2">Status: <Badge status={appointment.status} /></p>
                         <p>Estimated Wait: {appointment.estimated_wait} mins</p>
                         {appointment.status !== "completed" && (
                             <p>Expected Start: {formatEstimatedTime(appointment.estimated_start_time)}</p>
                         )}
-                    </div>
+                        </div>
+                    </Card>
                 ))}
             </div>
-        </div>
+        </AppShell>
     )
 }
 export default Appointments

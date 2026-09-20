@@ -1,6 +1,12 @@
 import { useState, useEffect} from "react"
 import { useParams } from "react-router-dom"
 import axios from "axios"
+import AppShell from "../components/ui/AppShell"
+import Badge from "../components/ui/Badge"
+import Button from "../components/ui/Button"
+import Card from "../components/ui/Card"
+import Modal from "../components/ui/Modal"
+import { alertErrorClass, alertSuccessClass } from "../components/ui/formStyles"
 
 function QueueStatus() {
     const {id: availabilityID} = useParams()
@@ -60,50 +66,52 @@ function QueueStatus() {
     }
 
     return(
-        <div>
-            <h2>Patient Queue</h2>
-            {error && <p>{error}</p>}
-            {success && <p>{success}</p>}
+        <AppShell
+            title="Patient queue"
+            description="Call the next patient and update visit status as you go."
+        >
+            {error && <p className={`mb-4 ${alertErrorClass}`}>{error}</p>}
+            {success && <p className={`mb-4 ${alertSuccessClass}`}>{success}</p>}
 
-            {selectedPatient && (
-                <div onClick={closePopup}>
-                    <div onClick={(e) => e.stopPropagation()}>
-                        <p>Change status for {selectedPatient.patient_name}</p>
-
-                        <button onClick={() => changeStatus("waiting")}>
-                            waiting
-                        </button>
-
-                        <button onClick={() => changeStatus("called")}>
-                            called
-                        </button>
-
-                        <button onClick={() => changeStatus("seen")}>
-                            seen
-                        </button>
-                    </div>
+            <Modal
+                open={Boolean(selectedPatient)}
+                onClose={closePopup}
+                title={selectedPatient ? `Change status for ${selectedPatient.patient_name}` : "Change status"}
+            >
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" onClick={() => changeStatus("waiting")}>
+                        waiting
+                    </Button>
+                    <Button onClick={() => changeStatus("called")}>
+                        called
+                    </Button>
+                    <Button variant="danger" onClick={() => changeStatus("seen")}>
+                        seen
+                    </Button>
                 </div>
-            )}
+            </Modal>
 
+            <div className="space-y-3">
             {queue.map((patient) => (
-                <div>
-                    <h3>Patient</h3>
-                    <p>position : {patient.position}</p>
-                    <p>patient_id : {patient.patient_id}</p>
-                    <p>patient_name : {patient.patient_name}</p>
-                    <p>estimated_wait : {patient.estimated_wait}</p>
-                    <p>
-                        status : {patient.status} - 
-                        <button onClick={() => openPopup(patient)}>
+                <Card key={patient.entry_id}>
+                    <h3 className="text-base font-semibold text-slate-900">Patient</h3>
+                    <p className="mt-2 text-sm text-slate-700">position : {patient.position}</p>
+                    <p className="text-sm text-slate-700">patient_id : {patient.patient_id}</p>
+                    <p className="text-sm text-slate-700">patient_name : {patient.patient_name}</p>
+                    <p className="text-sm text-slate-700">estimated_wait : {patient.estimated_wait}</p>
+                    <p className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                        status : <Badge status={patient.status} />
+                        <Button size="sm" variant="secondary" onClick={() => openPopup(patient)}>
                             Change status
-                        </button>
+                        </Button>
                     </p>
-                    <p>appointment_start_time : {patient.appointment_start_time}</p>
-                </div>
+                    <p className="text-sm text-slate-700">appointment_start_time : {patient.appointment_start_time}</p>
+                </Card>
             ))}
+            </div>
 
             
-        </div>
+        </AppShell>
     )
 }
 export default QueueStatus

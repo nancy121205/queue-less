@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import axios from "axios"
+import AppShell from "../components/ui/AppShell"
+import Button from "../components/ui/Button"
+import Card from "../components/ui/Card"
+import { alertErrorClass, alertSuccessClass } from "../components/ui/formStyles"
 
 function DoctorProfile(){
     // useParams() reads the id from the URL route /doctor-profile/:id, and you rename it to doctorId.
@@ -40,37 +44,43 @@ function DoctorProfile(){
         }
     }
     return(
-        <div>
-            <h1>Doctor Profile</h1>
-            {error && <p>{error}</p>}
-            {success && <p>{success}</p>}
+        <AppShell
+            title="Doctor profile"
+            description="Review clinic details and book an open slot."
+        >
+            {error && <p className={`mb-4 ${alertErrorClass}`}>{error}</p>}
+            {success && <p className={`mb-4 ${alertSuccessClass}`}>{success}</p>}
 
-            <div>
-                <h2>Doctor information:</h2>
-                <div>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card title="Doctor information">
+                    <div className="space-y-2 text-sm text-slate-700">
                     <p>Name: {info.name}</p>
                     <p>Email: {info.email}</p>
                     <p>Specialization: {info.specialization}</p>
                     <p>Hospital: {info.hospital_name}</p>
                     <p>Consult time: {info.avg_consult_mins} mins</p>
                     <p>Fees: {info.fees}</p>
-                </div>
+                    </div>
+                </Card>
 
-                <h2>Slots availabile:</h2>
+                <Card title="Slots available">
+                <div className="space-y-3">
                 {appointments.map((appointment) => (
-                    <div>
-                        <p>Date: {new Date(appointment.date).toLocaleDateString()}</p>
-                        <p>Start: {new Date(appointment.start_time).toLocaleTimeString()}</p>
-                        <p>End: {new Date(appointment.end_time).toLocaleTimeString()}</p>
-                        <p>Spots left: {appointment.max_patients - appointment.booked_patients}</p>
+                    <div key={appointment.id} className="rounded-lg border border-slate-200 p-4">
+                        <p className="text-sm text-slate-700">Date: {new Date(appointment.date).toLocaleDateString()}</p>
+                        <p className="text-sm text-slate-700">Start: {new Date(appointment.start_time).toLocaleTimeString()}</p>
+                        <p className="text-sm text-slate-700">End: {new Date(appointment.end_time).toLocaleTimeString()}</p>
+                        <p className="text-sm text-slate-700">Spots left: {appointment.max_patients - appointment.booked_patients}</p>
 
-                        <button onClick={() => handleBook(appointment.id)}>
+                        <Button className="mt-3" size="sm" onClick={() => handleBook(appointment.id)}>
                             Book slot
-                        </button>
+                        </Button>
                     </div>
                 ))}
+                </div>
+                </Card>
             </div>
-        </div>
+        </AppShell>
     )
 }
 export default DoctorProfile

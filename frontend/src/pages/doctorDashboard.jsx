@@ -1,6 +1,10 @@
 import { useState, useEffect} from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
+import AppShell from "../components/ui/AppShell"
+import Button from "../components/ui/Button"
+import Card from "../components/ui/Card"
+import { alertErrorClass, alertSuccessClass, fieldClass } from "../components/ui/formStyles"
 
 function DoctorDashboard() {
     const [date, setDate] = useState("")
@@ -54,38 +58,55 @@ function DoctorDashboard() {
     }, [])
 
     return (
-        <div>
-        <h1>Doctor Dashboard</h1>
-        
-        {error && <p>{error}</p>}
-        {success && <p>{success}</p>}
+        <AppShell
+            title="Doctor dashboard"
+            description="Publish clinic hours and open the live queue for each slot."
+        >
+        {error && <p className={`mb-4 ${alertErrorClass}`}>{error}</p>}
+        {success && <p className={`mb-4 ${alertSuccessClass}`}>{success}</p>}
 
-        <h2>Add new Availability</h2>
-        <form onSubmit={handleSubmit}>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-            <input type="time" value={start_time} onChange={(e) => setStartTime(e.target.value)} required />
-            <input type="time" value={end_time} onChange={(e) => setEndTime(e.target.value)} required />
-            <input type="number" min="1" value={max_patients} onChange={(e) => setMaxPatients(Number(e.target.value))} required />
-            <button type="submit">Add Availability</button>
+        <div className="grid gap-6 lg:grid-cols-2">
+        <Card title="Add new availability">
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block">
+                <span className="text-sm font-medium text-slate-700">Date</span>
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className={fieldClass} />
+            </label>
+            <label className="block">
+                <span className="text-sm font-medium text-slate-700">Start time</span>
+                <input type="time" value={start_time} onChange={(e) => setStartTime(e.target.value)} required className={fieldClass} />
+            </label>
+            <label className="block">
+                <span className="text-sm font-medium text-slate-700">End time</span>
+                <input type="time" value={end_time} onChange={(e) => setEndTime(e.target.value)} required className={fieldClass} />
+            </label>
+            <label className="block">
+                <span className="text-sm font-medium text-slate-700">Max patients</span>
+                <input type="number" min="1" value={max_patients} onChange={(e) => setMaxPatients(Number(e.target.value))} required className={fieldClass} />
+            </label>
+            <Button type="submit">Add Availability</Button>
         </form>
+        </Card>
 
-        <h2>Upcoming Appointments</h2>
-        <div>
+        <Card title="Upcoming appointments">
+        <div className="space-y-3">
             {appointments.map((appointment) => (
-                <div>
-                    <p>Date: {appointment.date}</p>
-                    <p>Start Time: {appointment.start_time}</p>
-                    <p>End Time: {appointment.end_time}</p>
-                    <p>Booked patients: {appointment.booked_patients}</p>
-                    <p>Max Patients: {appointment.max_patients}</p>
-                    <button onClick={() => navigate("/queue-status/" + appointment.id)}>
+                <div key={appointment.id} className="rounded-lg border border-slate-200 p-4">
+                    <p className="text-sm text-slate-700">Date: {appointment.date}</p>
+                    <p className="text-sm text-slate-700">Start Time: {appointment.start_time}</p>
+                    <p className="text-sm text-slate-700">End Time: {appointment.end_time}</p>
+                    <p className="text-sm text-slate-700">Booked patients: {appointment.booked_patients}</p>
+                    <p className="text-sm text-slate-700">Max Patients: {appointment.max_patients}</p>
+                    <Button className="mt-3" size="sm" onClick={() => navigate("/queue-status/" + appointment.id)}>
                         View Queue
-                    </button>
+                    </Button>
                 </div>
             ))}
         </div>
+        </Card>
+        </div>
 
-        </div>        
+        </AppShell>        
     )
 }
 export default DoctorDashboard

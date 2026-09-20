@@ -7,14 +7,23 @@ import PrivateRoute from './components/privateRoute';
 import DoctorProfile from './pages/doctorProfile';
 import Appointments from './pages/appointments';
 import QueueStatus from './pages/queueStatus';
+import DesignSystem from './pages/designSystem';
+import Landing from './pages/landing';
+import PatientProfile from './pages/patientProfile';
+import DoctorProfileEdit from './pages/doctorProfileEdit';
+import Help from './pages/help';
+import About from './pages/about';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/design-system" element={<DesignSystem/>} />
         <Route path="/login" element={<Login/>} />
         <Route path="/register" element={<Register/>} />
+        <Route path="/about" element={<About/>} />
+        <Route path="/help" element={<Help/>} />
         <Route path="/dashboard" element={
           <PrivateRoute><Dashboard /></PrivateRoute>
         } />
@@ -25,6 +34,12 @@ function App() {
         <Route path="/appointments/" element={<Appointments/>}/>
         <Route path="/queue-status/:id" element={
           <PrivateRoute><QueueStatus/></PrivateRoute>
+        } />
+        <Route path="/patient-profile" element={
+          <PrivateRoute><PatientProfile /></PrivateRoute>
+        } />
+        <Route path="/doctor-profile-edit" element={
+          <PrivateRoute><DoctorProfileEdit /></PrivateRoute>
         } />
       </Routes>
     </BrowserRouter>

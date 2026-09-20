@@ -1,6 +1,10 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import axios from "axios"
+import Button from "../components/ui/Button"
+import Card from "../components/ui/Card"
+import PublicHeader from "../components/ui/PublicHeader"
+import { alertErrorClass, fieldClass } from "../components/ui/formStyles"
 
 function Login() {
     const[email, setEmail] = useState("")
@@ -31,28 +35,59 @@ function Login() {
         }
     }
     return(
-        <div>
-            <h1>Login</h1>
-            <form onSubmit={handleSubmit}>
-                <input 
-                    type="email" 
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)} 
-                    required
-                />
+        <div className="flex min-h-screen flex-col bg-surface-page">
+            <PublicHeader />
 
-                <input 
-                    type="password" 
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)} 
-                    required
-                />
+            <main className="flex flex-1 items-center justify-center px-4 py-12">
+                <Card
+                    className="w-full max-w-md"
+                    title="Sign in"
+                    description="Use your clinic account to access your queue, appointments, and reports."
+                >
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-700">Email</span>
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className={fieldClass}
+                            />
+                        </label>
 
-                <button type="submit">Login</button>
-                {error && <p>{error}</p>}
-            </form>
+                        <label className="block">
+                            <span className="text-sm font-medium text-slate-700">Password</span>
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className={fieldClass}
+                            />
+                        </label>
+
+                        {error && (
+                            <p className={alertErrorClass}>
+                                {error}
+                            </p>
+                        )}
+
+                        <Button type="submit" className="w-full">
+                            Login
+                        </Button>
+                    </form>
+
+                    <p className="mt-4 text-center text-sm text-slate-600">
+                        New to QueueLess?{" "}
+                        <Link to="/register" className="font-medium text-primary-700 hover:text-primary-800">
+                            Create an account
+                        </Link>
+                    </p>
+                </Card>
+            </main>
         </div>
     )
 }
