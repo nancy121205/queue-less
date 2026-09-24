@@ -7,7 +7,6 @@ import PrivateRoute from './components/privateRoute';
 import DoctorProfile from './pages/doctorProfile';
 import Appointments from './pages/appointments';
 import QueueStatus from './pages/queueStatus';
-import DesignSystem from './pages/designSystem';
 import Landing from './pages/landing';
 import PatientProfile from './pages/patientProfile';
 import DoctorProfileEdit from './pages/doctorProfileEdit';
@@ -19,7 +18,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/design-system" element={<DesignSystem/>} />
         <Route path="/login" element={<Login/>} />
         <Route path="/register" element={<Register/>} />
         <Route path="/about" element={<About/>} />
