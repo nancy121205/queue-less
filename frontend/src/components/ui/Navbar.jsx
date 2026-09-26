@@ -21,6 +21,13 @@ function Navbar() {
   const navigate = useNavigate();
   const role = getUserRole();
   const links = role === "doctor" ? DOCTOR_LINKS : PATIENT_LINKS;
+  
+  const logoDestination =
+    role === "doctor"
+      ? "/doctor-dashboard"
+      : role === "patient"
+        ? "/dashboard"
+        : "/";
 
   function handleLogout() {
     logout();
@@ -30,10 +37,13 @@ function Navbar() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
-        <Link to={role === "doctor" ? "/doctor-dashboard" : "/dashboard"} className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-sm font-semibold text-white">
-            Q
-          </span>
+        <Link to={logoDestination} className="flex items-center gap-2.5">
+          <img
+            src="/logo.png"
+            alt="QueueLess"
+            className="h-8 w-8 object-contain"
+          />
+
           <span className="text-base font-semibold tracking-tight text-slate-900">
             QueueLess
           </span>
