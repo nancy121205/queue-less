@@ -15,7 +15,7 @@ function Appointments(){
         const fetchAppointments = () => {
             setError("")
             axios.get(
-                "http://localhost:8000/appointments/my",
+                `${import.meta.env.VITE_API_URL}/appointments/my`,
                 {headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
             )
             .then(res => {

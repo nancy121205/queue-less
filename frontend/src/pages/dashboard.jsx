@@ -38,7 +38,7 @@ function Dashboard() {
         try {
             // Step 1: upload + OCR
             const uploadRes = await axios.post(
-                "http://localhost:8000/reports/upload",
+                `${import.meta.env.VITE_API_URL}/reports/upload`,
                 formData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -48,7 +48,7 @@ function Dashboard() {
 
             // Step 2: summarize
             const summaryRes = await axios.post(
-                `http://localhost:8000/reports/${reportId}/summarize`,
+                `${import.meta.env.VITE_API_URL}/reports/${reportId}/summarize`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -64,7 +64,7 @@ function Dashboard() {
 
     useEffect(() => {
         setError("")
-        axios.get("http://localhost:8000/doctors/")
+        axios.get(`${import.meta.env.VITE_API_URL}/doctors/`)
             .then(res => {
                 setDoctors(res.data)
                 setError("")

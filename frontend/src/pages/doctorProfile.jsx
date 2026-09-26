@@ -16,13 +16,13 @@ function DoctorProfile(){
     const navigate = useNavigate()
 
     useEffect(() => {
-        axios.get(`http://localhost:8000/doctors/${doctorId}`)
+        axios.get(`${import.meta.env.VITE_API_URL}/doctors/${doctorId}`)
             .then(res => setInfo(res.data))
             .catch(() => setError("Failed to load Doctor's information"))
     }, [doctorId])
 
     useEffect(() => {
-        axios.get(`http://localhost:8000/doctors/${doctorId}/availability`)
+        axios.get(`${import.meta.env.VITE_API_URL}/doctors/${doctorId}/availability`)
             .then(res => setAppointments(res.data))
             .catch(() => setError("Failed to load appointments"))
     }, [doctorId])
@@ -31,7 +31,7 @@ function DoctorProfile(){
         try{
             setError("")
             setSuccess("")
-            const response = await axios.post("http://localhost:8000/appointments/new", 
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/appointments/new`, 
                 {doctor_id: doctorId, availability_id : availability_id},
                 {headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
             );

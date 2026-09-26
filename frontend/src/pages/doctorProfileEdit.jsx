@@ -20,11 +20,11 @@ function DoctorProfileEdit() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:8000/auth/me", {
+      .get(`${import.meta.env.VITE_API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((me) =>
-        axios.get("http://localhost:8000/doctors/").then((res) => {
+        axios.get(`${import.meta.env.VITE_API_URL}/doctors/`).then((res) => {
           const profile = res.data.find((doctor) => doctor.email === me.data.email);
           if (!profile) {
             setError("Doctor profile not found.");
@@ -48,7 +48,7 @@ function DoctorProfileEdit() {
     setSuccess("");
     try {
       await axios.put(
-        "http://localhost:8000/doctors/me",
+        `${import.meta.env.VITE_API_URL}/doctors/me`,
         { specialization, hospital_name, avg_consult_mins },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );

@@ -16,12 +16,12 @@ function Login() {
     async function handleSubmit(e) {
         e.preventDefault()
         try{
-            const response = await axios.post("http://localhost:8000/auth/login", {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
                 email, password
             })
             localStorage.setItem("token", response.data.access_token)
 
-            const me = await axios.get("http://localhost:8000/auth/me", {
+            const me = await axios.get(`${import.meta.env.VITE_API_URL}/auth/me`, {
                 headers: { Authorization: `Bearer ${response.data.access_token}` }
             })
             if (me.data.role === "doctor") {

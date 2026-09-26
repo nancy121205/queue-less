@@ -19,7 +19,7 @@ function QueueStatus() {
         try {
             setError("")
             const res = await axios.get(
-                `http://localhost:8000/queue/${availabilityID}`,
+                `${import.meta.env.VITE_API_URL}/queue/${availabilityID}`,
                 {headers: {Authorization: `Bearer ${localStorage.getItem("token")}`}}
             )
             setQueue(res.data)
@@ -47,7 +47,7 @@ function QueueStatus() {
 
         try {
             const res = await axios.patch(
-                `http://localhost:8000/queue/${selectedPatient.entry_id}/status`,
+                `${import.meta.env.VITE_API_URL}/queue/${selectedPatient.entry_id}/status`,
                 null,
                 {
                     params: { new_status: status },

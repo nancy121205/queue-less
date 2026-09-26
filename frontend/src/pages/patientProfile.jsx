@@ -20,7 +20,7 @@ function PatientProfile() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:8000/auth/me", {
+      .get(`${import.meta.env.VITE_API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -41,7 +41,7 @@ function PatientProfile() {
     setSuccess("");
     try {
       await axios.put(
-        "http://localhost:8000/auth/me",
+        `${import.meta.env.VITE_API_URL}/auth/me`,
         { name, phone, email },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );

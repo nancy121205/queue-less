@@ -23,7 +23,7 @@ function Register() {
     async function handleSubmitPatient(e) {
         e.preventDefault()
         try {
-            const response = await axios.post("http://localhost:8000/auth/register/user", {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register/user`, {
                 name, email, password, role : selectedRole
             })
             localStorage.setItem("token", response.data.access_token)
@@ -37,7 +37,7 @@ function Register() {
     async function handleSubmitDoctor(e) {
         e.preventDefault()
         try {
-            const response = await axios.post("http://localhost:8000/auth/register/doctor", {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register/doctor`, {
                 name, email, password, role : selectedRole, specialization, avg_consult_mins, hospital_name, fees
             })
             localStorage.setItem("token", response.data.access_token)

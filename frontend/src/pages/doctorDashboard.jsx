@@ -28,7 +28,7 @@ function DoctorDashboard() {
                 return;
             }
             setError("")
-            await axios.post("http://localhost:8000/doctors/availability", {
+            await axios.post(`${import.meta.env.VITE_API_URL}/doctors/availability`, {
                     date, 
                     start_time : startDateTime, 
                     end_time : endDateTime, 
@@ -49,7 +49,7 @@ function DoctorDashboard() {
     useEffect(() => {
         setError("")
         axios.get(
-            "http://localhost:8000/appointments/upcoming",
+            `${import.meta.env.VITE_API_URL}/appointments/upcoming`,
             {headers: {Authorization: `Bearer ${localStorage.getItem("token")}`}}
         ).then(res => {
             setAppointments(res.data)
