@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from database import get_db
 from jose import jwt, JWTError
 from auth import JWT_SECRET
@@ -188,4 +188,43 @@ def cancel_appointment(appointment_id: int, token: str = Depends(OAuth2PasswordB
     
     user_id = payload.get("id")
 
-    pass
+    appointment = db.query(Appointment).filter(
+        Appointment.id == appointment_id,
+        Appointment.patient_id == user_id
+    ).first()
+
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    if appointment.status in ("completed", "cancelled"):
+        raise HTTPException(status_code=400, detail=f"Cannot cancel an appointment that is already {appointment.status}")
+
+    if appointment.start_time - datetime.now() < timedelta(minutes=30):
+        raise HTTPException(status_code=400, detail="Appointments can only be cancelled at least 30 minutes in advance")
+
+    queue_entry = db.query(QueueEntry).filter(QueueEntry.appointment_id == appointment.id).first()
+
+    if queue_entry:
+        cancelled_position = queue_entry.position
+
+        db.query(QueueEntry).filter(
+            QueueEntry.position > cancelled_position,
+            QueueEntry.appointment_id.in_(
+                db.query(Appointment.id).filter(Appointment.availability_id == appointment.availability_id)
+            )
+        ).update(
+            {"position": QueueEntry.position - 1},
+            synchronize_session=False
+        )
+
+        db.delete(queue_entry)
+
+    appointment.status = "cancelled"
+
+    availability = db.query(Availability).filter(Availability.id == appointment.availability_id).first()
+    if availability and availability.booked_patients > 0:
+        availability.booked_patients -= 1
+
+    db.commit()
+
+    return {"message": "Appointment cancelled successfully"}

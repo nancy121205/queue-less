@@ -140,20 +140,3 @@ def update_status(
 
     db.commit()
     return {"message": f"Queue entry updated updated to {new_status}"}
-
-@router.post("/predict-wait")
-def predict_wait(data: PredictWaitRequest, request: Request, db: Session = Depends(get_db)):
-    doctor = db.query(Doctor).filter(Doctor.id == data.doctor_id).first()
-    if not doctor:
-        raise HTTPException(status_code=404, detail="Doctor not found")
-
-    model = request.app.state.model
-    appointment_time = data.appointment_time or datetime.now()
-
-    try:
-        features = build_features(data.position, doctor.avg_consult_mins, appointment_time)
-        predicted = float(model.predict(features)[0])
-        return {"estimated_wait_minutes": round(predicted, 1), "source": "model"}
-    except Exception:
-        fallback = round(data.position * float(doctor.avg_consult_mins), 1)
-        return {"estimated_wait_minutes": fallback, "source": "fallback"}
