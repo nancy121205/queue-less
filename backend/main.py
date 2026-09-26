@@ -29,7 +29,7 @@ app.include_router(reports.router, prefix="/reports", tags=["reports"])
 # CORS middleware tells your backend "yes, requests from localhost:5173 are allowed."
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://queue-less-puce.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
