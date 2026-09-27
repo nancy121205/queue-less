@@ -44,7 +44,7 @@ def register(data: RegisterUserRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
-    return {"access_token": create_token({"id": str(new_user.id), "role": new_user.role})}
+    return {"access_token": create_token({"id": new_user.id, "role": new_user.role})}
 
 @router.post("/register/doctor")
 def register(data: RegisterDoctorRequest, db: Session = Depends(get_db)):
@@ -76,7 +76,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == data.email).first()
     if not existing_user or not verify_password(data.password, existing_user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"access_token": create_token({"id": str(existing_user.id), "role": existing_user.role})}
+    return {"access_token": create_token({"id": existing_user.id, "role": existing_user.role})}
 
 @router.get("/me")
 def get_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/auth/login")), db: Session = Depends(get_db)):
